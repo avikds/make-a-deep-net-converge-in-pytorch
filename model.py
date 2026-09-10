@@ -286,8 +286,57 @@ def compare_configs(loaders, configs, epochs=2, lr=0.1, seed=42):
 
     return results
 
-# Step 7 - dropout_effect (not yet solved)
-# TODO: implement
+# Step 7 - dropout_effect
+def dropout_effect(loaders, rate=0.5, epochs=3, seed=42):
+    results = {}
+
+    for name, dropout_rate in {
+        "no_dropout": 0.0,
+        "dropout": rate
+    }.items():
+        torch.manual_seed(seed)
+
+        model = DeepNet(
+            n_layers=3,
+            activation="relu",
+            batchnorm=True,
+            dropout=dropout_rate
+        )
+
+        apply_he_init(model)
+
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=0.1
+        )
+
+        history = train_epochs(
+            model,
+            loaders,
+            optimizer,
+            epochs=epochs
+        )
+
+        model.eval()
+
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for xb, yb in loaders["train"]:
+                pred = model(xb).argmax(dim=1)
+                correct += (pred == yb).sum().item()
+                total += yb.size(0)
+
+        train_acc = correct / total
+        val_acc = history["val_acc"][-1]
+
+        results[name] = {
+            "train_acc": float(train_acc),
+            "val_acc": float(val_acc)
+        }
+
+    return results
 
 # Step 8 - make_optimizer (not yet solved)
 # TODO: implement
