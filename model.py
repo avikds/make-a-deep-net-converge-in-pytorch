@@ -515,8 +515,98 @@ def clipping_effect(model, xb, yb, max_norm=1.0):
         "clipped": bool(before > max_norm),
     }
 
-# Step 12 - split_by_class (not yet solved)
-# TODO: implement
+# Step 12 - split_by_class
+def split_by_class(loaders, held_out=(5, 7), batch_size=64, seed=42):
+    held_out = tuple(held_out)
+
+    def make_split(dataset):
+        x, y = dataset.tensors
+
+        # Task A: classes not held out.
+        mask_a = ~torch.isin(y, torch.tensor(held_out, device=y.device))
+        x_a = x[mask_a]
+        y_a_original = y[mask_a]
+
+        # Relabel Task A to 0..7 in increasing order of original labels.
+        remaining_classes = sorted(
+            set(y_a_original.tolist())
+        )
+        mapping_a = {
+            original: new
+            for new, original in enumerate(remaining_classes)
+        }
+        y_a = torch.tensor(
+            [mapping_a[int(label)] for label in y_a_original],
+            dtype=torch.int64,
+        )
+
+        # Task B: held-out classes only.
+        mask_b = torch.isin(
+            y,
+            torch.tensor(held_out, device=y.device),
+        )
+        x_b = x[mask_b]
+        y_b_original = y[mask_b]
+
+        # Relabel held-out classes to 0 and 1 in the order supplied.
+        mapping_b = {
+            original: new
+            for new, original in enumerate(held_out)
+        }
+        y_b = torch.tensor(
+            [mapping_b[int(label)] for label in y_b_original],
+            dtype=torch.int64,
+        )
+
+        return (
+            TensorDataset(x_a, y_a),
+            TensorDataset(x_b, y_b),
+        )
+
+    train_a, train_b = make_split(loaders["train"].dataset)
+    val_a, val_b = make_split(loaders["val"].dataset)
+
+    generator_a = torch.Generator().manual_seed(seed)
+    generator_b = torch.Generator().manual_seed(seed)
+
+    train_loader_a = DataLoader(
+        train_a,
+        batch_size=batch_size,
+        shuffle=True,
+        generator=generator_a,
+    )
+
+    train_loader_b = DataLoader(
+        train_b,
+        batch_size=batch_size,
+        shuffle=True,
+        generator=generator_b,
+    )
+
+    val_loader_a = DataLoader(
+        val_a,
+        batch_size=batch_size,
+        shuffle=False,
+    )
+
+    val_loader_b = DataLoader(
+        val_b,
+        batch_size=batch_size,
+        shuffle=False,
+    )
+
+    return {
+        "A": {
+            "train": train_loader_a,
+            "val": val_loader_a,
+            "n_classes": 8,
+        },
+        "B": {
+            "train": train_loader_b,
+            "val": val_loader_b,
+            "n_classes": 2,
+        },
+    }
 
 # Step 13 - transfer_head (not yet solved)
 # TODO: implement
