@@ -398,8 +398,37 @@ def make_optimizer(model, name, lr=0.01):
 
     raise ValueError(f"Unknown optimizer: {name}")
 
-# Step 9 - compare_optimizers (not yet solved)
-# TODO: implement
+# Step 9 - compare_optimizers
+def compare_optimizers(loaders, names, epochs=2, lr=0.01, seed=42):
+    results = {}
+
+    for name in names:
+        torch.manual_seed(seed)
+
+        model = DeepNet(
+            activation="relu",
+            batchnorm=True,
+            n_layers=3,
+        )
+
+        apply_he_init(model)
+
+        optimizer = make_optimizer(
+            model,
+            name,
+            lr=lr,
+        )
+
+        history = train_epochs(
+            model,
+            loaders,
+            optimizer,
+            epochs=epochs,
+        )
+
+        results[name] = float(history["val_acc"][-1])
+
+    return results
 
 # Step 10 - one_cycle (not yet solved)
 # TODO: implement

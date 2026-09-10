@@ -18,7 +18,7 @@ python scaffold.py
 - [x] **6.** compare_configs
 - [x] **7.** dropout_effect
 - [x] **8.** make_optimizer
-- [ ] **9.** compare_optimizers
+- [x] **9.** compare_optimizers
 - [ ] **10.** one_cycle
 - [ ] **11.** clipping_effect
 - [ ] **12.** split_by_class
