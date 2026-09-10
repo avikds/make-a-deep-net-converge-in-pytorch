@@ -225,9 +225,9 @@ def train_epochs(model, loaders, optimizer, epochs=2, scheduler=None, clip=None)
 
 # Step 4 - gradient_norms
 def gradient_norms(model, xb, yb):
-    criterion = nn.CrossEntropyLoss()
-
     model.zero_grad()
+
+    criterion = nn.CrossEntropyLoss()
 
     logits = model(xb)
     loss = criterion(logits, yb)
@@ -238,7 +238,10 @@ def gradient_norms(model, xb, yb):
 
     for layer in model.body:
         if isinstance(layer, nn.Linear):
-            norms.append(layer.weight.grad.norm(p=2).item())
+            if layer.weight.grad is None:
+                norms.append(0.0)
+            else:
+                norms.append(layer.weight.grad.norm(p=2).item())
 
     return norms
 
