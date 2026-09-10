@@ -26,6 +26,18 @@ python scaffold.py
 - [x] **14.** transfer_experiment
 - [x] **15.** save_deepnet
 
----
+## Results
 
-Built on Deep-ML.
+```
+gradient norm, first layer / last layer: sigmoid+default 2.4e-07   relu+He+BN 15.69
+  10x sigmoid, default init        val acc 0.096
+  10x relu, He init                val acc 0.481
+  10x relu, He init, batchnorm     val acc 0.712
+dropout 0.5 on a 3-layer net: train acc 0.821 -> 0.639, val acc 0.754 -> 0.743
+optimizers at lr 0.01, 2 epochs: sgd 0.728  momentum 0.792  nesterov 0.792  adam 0.788  adamw 0.802
+one-cycle (lr 0.0040 -> 0.10 -> 0.000021): val acc 0.812
+gradient clipping at 1.0: total norm 0.42 -> 0.42
+
+sandal vs sneaker: from scratch 0.927   frozen transfer 0.854   fine-tuned 0.854
+saved and reloaded: 0.906 accuracy on the first validation batch, eval mode = True
+```
