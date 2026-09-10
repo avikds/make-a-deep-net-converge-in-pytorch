@@ -430,8 +430,60 @@ def compare_optimizers(loaders, names, epochs=2, lr=0.01, seed=42):
 
     return results
 
-# Step 10 - one_cycle (not yet solved)
-# TODO: implement
+# Step 10 - one_cycle
+def one_cycle(loaders, max_lr=0.1, epochs=2, seed=42):
+    torch.manual_seed(seed)
+
+    model = DeepNet(
+        activation="relu",
+        batchnorm=True,
+        n_layers=3,
+    )
+
+    apply_he_init(model)
+
+    optimizer = torch.optim.SGD(
+        model.parameters(),
+        lr=max_lr,
+        momentum=0.9,
+    )
+
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer,
+        max_lr=max_lr,
+        total_steps=epochs * len(loaders["train"]),
+    )
+
+    lr_start = float(optimizer.param_groups[0]["lr"])
+    recorded_lrs = []
+
+    original_step = scheduler.step
+
+    def step_wrapper():
+        original_step()
+        recorded_lrs.append(
+            float(optimizer.param_groups[0]["lr"])
+        )
+
+    scheduler.step = step_wrapper
+
+    history = train_epochs(
+        model,
+        loaders,
+        optimizer,
+        epochs=epochs,
+        scheduler=scheduler,
+    )
+
+    lr_peak = max(recorded_lrs)
+    lr_end = recorded_lrs[-1]
+
+    return {
+        "val_acc": float(history["val_acc"][-1]),
+        "lr_start": float(lr_start),
+        "lr_peak": float(lr_peak),
+        "lr_end": float(lr_end),
+    }
 
 # Step 11 - clipping_effect (not yet solved)
 # TODO: implement

@@ -19,7 +19,7 @@ python scaffold.py
 - [x] **7.** dropout_effect
 - [x] **8.** make_optimizer
 - [x] **9.** compare_optimizers
-- [ ] **10.** one_cycle
+- [x] **10.** one_cycle
 - [ ] **11.** clipping_effect
 - [ ] **12.** split_by_class
 - [ ] **13.** transfer_head
