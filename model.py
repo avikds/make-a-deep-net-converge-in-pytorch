@@ -248,8 +248,15 @@ def gradient_norms(model, xb, yb):
 
     return norms
 
-# Step 5 - apply_he_init (not yet solved)
-# TODO: implement
+# Step 5 - apply_he_init
+def apply_he_init(model):
+    for layer in model.modules():
+        if isinstance(layer, nn.Linear):
+            nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
+            if layer.bias is not None:
+                nn.init.zeros_(layer.bias)
+
+    return model
 
 # Step 6 - compare_configs (not yet solved)
 # TODO: implement
