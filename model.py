@@ -485,8 +485,35 @@ def one_cycle(loaders, max_lr=0.1, epochs=2, seed=42):
         "lr_end": float(lr_end),
     }
 
-# Step 11 - clipping_effect (not yet solved)
-# TODO: implement
+# Step 11 - clipping_effect
+def clipping_effect(model, xb, yb, max_norm=1.0):
+    criterion = nn.CrossEntropyLoss()
+
+    model.zero_grad()
+
+    logits = model(xb)
+    loss = criterion(logits, yb)
+
+    loss.backward()
+
+    before = torch.nn.utils.clip_grad_norm_(
+        model.parameters(),
+        max_norm,
+    )
+
+    total_squared_norm = 0.0
+
+    for parameter in model.parameters():
+        if parameter.grad is not None:
+            total_squared_norm += parameter.grad.detach().norm(2).item() ** 2
+
+    after = total_squared_norm ** 0.5
+
+    return {
+        "before": float(before),
+        "after": float(after),
+        "clipped": bool(before > max_norm),
+    }
 
 # Step 12 - split_by_class (not yet solved)
 # TODO: implement

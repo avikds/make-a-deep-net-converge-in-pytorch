@@ -20,7 +20,7 @@ python scaffold.py
 - [x] **8.** make_optimizer
 - [x] **9.** compare_optimizers
 - [x] **10.** one_cycle
-- [ ] **11.** clipping_effect
+- [x] **11.** clipping_effect
 - [ ] **12.** split_by_class
 - [ ] **13.** transfer_head
 - [ ] **14.** transfer_experiment
