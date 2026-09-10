@@ -12,7 +12,7 @@ python scaffold.py
 
 - [x] **1.** fashion_loaders
 - [x] **2.** DeepNet
-- [ ] **3.** train_epochs
+- [x] **3.** train_epochs
 - [ ] **4.** gradient_norms
 - [ ] **5.** apply_he_init
 - [ ] **6.** compare_configs

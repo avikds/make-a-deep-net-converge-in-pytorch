@@ -172,8 +172,62 @@ class DeepNet(nn.Module):
         x = self.body(x)
         return self.head(x)
 
-# Step 3 - train_epochs (not yet solved)
-# TODO: implement
+# Step 3 - train_epochs
+def train_epochs(model, loaders, optimizer, epochs=2, scheduler=None, clip=None):
+    criterion = nn.CrossEntropyLoss()
+
+    history = {
+        "train_loss": [],
+        "val_acc": []
+    }
+
+    for _ in range(epochs):
+        model.train()
+
+        total_loss = 0.0
+        total_samples = 0
+
+        for xb, yb in loaders["train"]:
+            optimizer.zero_grad()
+
+            logits = model(xb)
+            loss = criterion(logits, yb)
+
+            loss.backward()
+
+            if clip is not None:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+
+            optimizer.step()
+
+            if scheduler is not None:
+                scheduler.step()
+
+            batch_size = yb.size(0)
+            total_loss += loss.item() * batch_size
+            total_samples += batch_size
+
+        mean_train_loss = total_loss / total_samples
+
+        model.eval()
+
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for xb, yb in loaders["val"]:
+                logits = model(xb)
+                predictions = logits.argmax(dim=1)
+
+                correct += (predictions == yb).sum().item()
+                total += yb.size(0)
+
+        val_acc = correct / total
+
+        history["train_loss"].append(mean_train_loss)
+        history["val_acc"].append(val_acc)
+
+    return history
 
 # Step 4 - gradient_norms (not yet solved)
 # TODO: implement
