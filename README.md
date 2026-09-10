@@ -13,7 +13,7 @@ python scaffold.py
 - [x] **1.** fashion_loaders
 - [x] **2.** DeepNet
 - [x] **3.** train_epochs
-- [ ] **4.** gradient_norms
+- [x] **4.** gradient_norms
 - [ ] **5.** apply_he_init
 - [ ] **6.** compare_configs
 - [ ] **7.** dropout_effect
