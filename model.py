@@ -258,8 +258,33 @@ def apply_he_init(model):
 
     return model
 
-# Step 6 - compare_configs (not yet solved)
-# TODO: implement
+# Step 6 - compare_configs
+def compare_configs(loaders, configs, epochs=2, lr=0.1, seed=42):
+    results = {}
+
+    for name, config in configs.items():
+        torch.manual_seed(seed)
+
+        model_kwargs = dict(config)
+        he_init = model_kwargs.pop("he_init", False)
+
+        model = DeepNet(**model_kwargs)
+
+        if he_init:
+            apply_he_init(model)
+
+        optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+
+        history = train_epochs(
+            model,
+            loaders,
+            optimizer,
+            epochs=epochs
+        )
+
+        results[name] = float(history["val_acc"][-1])
+
+    return results
 
 # Step 7 - dropout_effect (not yet solved)
 # TODO: implement
