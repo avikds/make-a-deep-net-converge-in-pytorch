@@ -747,7 +747,6 @@ def save_deepnet(model, config, path):
         path,
     )
 
-
 def load_deepnet(path):
     checkpoint = torch.load(
         path,
