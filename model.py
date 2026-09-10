@@ -264,15 +264,18 @@ def compare_configs(loaders, configs, epochs=2, lr=0.1, seed=42):
     for name, config in configs.items():
         torch.manual_seed(seed)
 
-        model_kwargs = dict(config)
-        he_init = model_kwargs.pop("he_init", False)
+        model_config = dict(config)
+        he_init = model_config.pop("he_init", False)
 
-        model = DeepNet(**model_kwargs)
+        model = DeepNet(**model_config)
 
         if he_init:
             apply_he_init(model)
 
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=lr
+        )
 
         history = train_epochs(
             model,
