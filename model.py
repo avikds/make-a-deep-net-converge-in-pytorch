@@ -166,12 +166,12 @@ class DeepNet(nn.Module):
 
 # Step 3 - train_epochs
 def train_epochs(model, loaders, optimizer, epochs=2, scheduler=None, clip=None):
-    criterion = nn.CrossEntropyLoss()
-
     history = {
         "train_loss": [],
-        "val_acc": []
+        "val_acc": [],
     }
+
+    criterion = nn.CrossEntropyLoss()
 
     for _ in range(epochs):
         model.train()
@@ -188,14 +188,16 @@ def train_epochs(model, loaders, optimizer, epochs=2, scheduler=None, clip=None)
             loss.backward()
 
             if clip is not None:
-                torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+                torch.nn.utils.clip_grad_norm_(
+                    model.parameters(), clip
+                )
 
             optimizer.step()
 
             if scheduler is not None:
                 scheduler.step()
 
-            batch_size = yb.size(0)
+            batch_size = xb.size(0)
             total_loss += loss.item() * batch_size
             total_samples += batch_size
 
@@ -214,10 +216,10 @@ def train_epochs(model, loaders, optimizer, epochs=2, scheduler=None, clip=None)
                 correct += (predictions == yb).sum().item()
                 total += yb.size(0)
 
-        val_acc = correct / total
+        val_accuracy = correct / total
 
         history["train_loss"].append(mean_train_loss)
-        history["val_acc"].append(val_acc)
+        history["val_acc"].append(val_accuracy)
 
     return history
 
