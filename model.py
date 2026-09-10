@@ -608,8 +608,28 @@ def split_by_class(loaders, held_out=(5, 7), batch_size=64, seed=42):
         },
     }
 
-# Step 13 - transfer_head (not yet solved)
-# TODO: implement
+# Step 13 - transfer_head
+import copy
+
+def transfer_head(pretrained, n_classes, freeze_body=True):
+    model = copy.deepcopy(pretrained)
+
+    in_features = model.head.in_features
+    model.head = nn.Linear(in_features, n_classes)
+
+    if freeze_body:
+        for parameter in model.body.parameters():
+            parameter.requires_grad = False
+
+    return model
+
+
+def trainable_parameters(model):
+    return sum(
+        parameter.numel()
+        for parameter in model.parameters()
+        if parameter.requires_grad
+    )
 
 # Step 14 - transfer_experiment (not yet solved)
 # TODO: implement

@@ -22,7 +22,7 @@ python scaffold.py
 - [x] **10.** one_cycle
 - [x] **11.** clipping_effect
 - [x] **12.** split_by_class
-- [ ] **13.** transfer_head
+- [x] **13.** transfer_head
 - [ ] **14.** transfer_experiment
 - [ ] **15.** save_deepnet
 
