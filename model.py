@@ -360,8 +360,43 @@ def dropout_effect(loaders, rate=0.5, epochs=3, seed=42):
 
     return results
 
-# Step 8 - make_optimizer (not yet solved)
-# TODO: implement
+# Step 8 - make_optimizer
+def make_optimizer(model, name, lr=0.01):
+    if name == "sgd":
+        return torch.optim.SGD(
+            model.parameters(),
+            lr=lr,
+        )
+
+    if name == "momentum":
+        return torch.optim.SGD(
+            model.parameters(),
+            lr=lr,
+            momentum=0.9,
+        )
+
+    if name == "nesterov":
+        return torch.optim.SGD(
+            model.parameters(),
+            lr=lr,
+            momentum=0.9,
+            nesterov=True,
+        )
+
+    if name == "adam":
+        return torch.optim.Adam(
+            model.parameters(),
+            lr=lr,
+        )
+
+    if name == "adamw":
+        return torch.optim.AdamW(
+            model.parameters(),
+            lr=lr,
+            weight_decay=0.01,
+        )
+
+    raise ValueError(f"Unknown optimizer: {name}")
 
 # Step 9 - compare_optimizers (not yet solved)
 # TODO: implement
