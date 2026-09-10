@@ -302,41 +302,60 @@ def dropout_effect(loaders, rate=0.5, epochs=3, seed=42):
             activation="relu",
             batchnorm=True,
             dropout=dropout_rate,
-            n_layers=3
+            n_layers=3,
         )
 
         apply_he_init(model)
 
-        optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+        optimizer = torch.optim.SGD(
+            model.parameters(),
+            lr=0.1,
+        )
 
         train_epochs(
             model,
             loaders,
             optimizer,
-            epochs=epochs
+            epochs=epochs,
         )
 
-        model.eval()
+        # Measure training accuracy with the model in training mode.
+        # This keeps dropout active, showing its regularizing effect
+        # on the training fit.
+        model.train()
 
         train_correct = 0
         train_total = 0
+
+        with torch.no_grad():
+            for xb, yb in loaders["train"]:
+                logits = model(xb)
+                predictions = logits.argmax(dim=1)
+
+                train_correct += (predictions == yb).sum().item()
+                train_total += yb.size(0)
+
+        train_acc = train_correct / train_total
+
+        # Validation accuracy must be measured with dropout disabled.
+        model.eval()
+
         val_correct = 0
         val_total = 0
 
         with torch.no_grad():
-            for xb, yb in loaders["train"]:
-                pred = model(xb).argmax(dim=1)
-                train_correct += (pred == yb).sum().item()
-                train_total += yb.size(0)
-
             for xb, yb in loaders["val"]:
-                pred = model(xb).argmax(dim=1)
-                val_correct += (pred == yb).sum().item()
+                logits = model(xb)
+                predictions = logits.argmax(dim=1)
+
+                val_correct += (predictions == yb).sum().item()
                 val_total += yb.size(0)
 
+        val_acc = val_correct / val_total
+
         results[name] = {
-            "train_acc": float(train_correct / train_total),
-            "val_acc": float(val_correct / val_total)
+            "train_acc": float(train_acc),
+            "val_acc": float(val_acc),
         }
 
     return results
