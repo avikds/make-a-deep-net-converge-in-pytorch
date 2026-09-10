@@ -8,17 +8,16 @@ import numpy as np
 
 # Step 1 - fashion_loaders
 import os
-import gzip
 import tempfile
 import urllib.request
-
+import gzip
 import numpy as np
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 def fashion_loaders(n_train=5000, n_val=1000, batch_size=64, seed=42):
     base_url = "https://storage.googleapis.com/tensorflow/tf-keras-datasets/"
-    cache_dir = tempfile.gettempdir()
+    tmp_dir = tempfile.gettempdir()
 
     files = {
         "train_images": "train-images-idx3-ubyte.gz",
@@ -28,69 +27,65 @@ def fashion_loaders(n_train=5000, n_val=1000, batch_size=64, seed=42):
     }
 
     paths = {}
+
+    # Download each file once and cache it with a fashion_ prefix.
     for key, filename in files.items():
-        cached_name = f"fashion_{filename}"
-        path = os.path.join(cache_dir, cached_name)
+        path = os.path.join(tmp_dir, "fashion_" + filename)
+        paths[key] = path
 
         if not os.path.exists(path):
             urllib.request.urlretrieve(base_url + filename, path)
 
-        paths[key] = path
-
-    # Parse training images.
+    # Read and parse the IDX files.
     with gzip.open(paths["train_images"], "rb") as f:
-        image_bytes = f.read()
+        train_images_raw = f.read()
+
+    with gzip.open(paths["train_labels"], "rb") as f:
+        train_labels_raw = f.read()
+
+    with gzip.open(paths["test_images"], "rb") as f:
+        test_images_raw = f.read()
+
+    with gzip.open(paths["test_labels"], "rb") as f:
+        test_labels_raw = f.read()
 
     train_images = np.frombuffer(
-        image_bytes,
-        dtype=np.uint8,
-        offset=16
+        train_images_raw, dtype=np.uint8, offset=16
     ).reshape(-1, 28 * 28)
-
-    # Parse training labels.
-    with gzip.open(paths["train_labels"], "rb") as f:
-        label_bytes = f.read()
 
     train_labels = np.frombuffer(
-        label_bytes,
-        dtype=np.uint8,
-        offset=8
+        train_labels_raw, dtype=np.uint8, offset=8
     )
-
-    # Parse validation images from the test set.
-    with gzip.open(paths["test_images"], "rb") as f:
-        image_bytes = f.read()
 
     test_images = np.frombuffer(
-        image_bytes,
-        dtype=np.uint8,
-        offset=16
+        test_images_raw, dtype=np.uint8, offset=16
     ).reshape(-1, 28 * 28)
 
-    # Parse validation labels from the test set.
-    with gzip.open(paths["test_labels"], "rb") as f:
-        label_bytes = f.read()
-
     test_labels = np.frombuffer(
-        label_bytes,
-        dtype=np.uint8,
-        offset=8
+        test_labels_raw, dtype=np.uint8, offset=8
     )
 
-    # Training data: first n_train examples.
+    # Use the first n_train training examples and the next n_val examples
+    # for validation.
+    val_start = n_train
+    val_end = n_train + n_val
+
     x_train = train_images[:n_train]
     y_train = train_labels[:n_train]
 
-    # Validation data: next n_val examples after the training portion.
-    x_val = train_images[n_train:n_train + n_val]
-    y_val = train_labels[n_train:n_train + n_val]
+    x_val = train_images[val_start:val_end]
+    y_val = train_labels[val_start:val_end]
 
-    # Standardize after scaling pixels to [0, 1].
+    # Scale pixels to [0, 1], then standardize using the specified
+    # Fashion-MNIST mean and standard deviation.
+    mean = 0.2860
+    std = 0.3530
+
     x_train = x_train.astype(np.float32) / 255.0
     x_val = x_val.astype(np.float32) / 255.0
 
-    x_train = (x_train - 0.2860) / 0.3530
-    x_val = (x_val - 0.2860) / 0.3530
+    x_train = (x_train - mean) / std
+    x_val = (x_val - mean) / std
 
     # Convert to PyTorch tensors.
     x_train = torch.from_numpy(x_train)
@@ -102,7 +97,7 @@ def fashion_loaders(n_train=5000, n_val=1000, batch_size=64, seed=42):
     train_dataset = TensorDataset(x_train, y_train)
     val_dataset = TensorDataset(x_val, y_val)
 
-    # Seeded generator for reproducible training shuffling.
+    # Seeded generator for deterministic training-data shuffling.
     generator = torch.Generator()
     generator.manual_seed(seed)
 
@@ -110,19 +105,19 @@ def fashion_loaders(n_train=5000, n_val=1000, batch_size=64, seed=42):
         train_dataset,
         batch_size=batch_size,
         shuffle=True,
-        generator=generator
+        generator=generator,
     )
 
     val_loader = DataLoader(
         val_dataset,
         batch_size=batch_size,
-        shuffle=False
+        shuffle=False,
     )
 
     return {
         "train": train_loader,
         "val": val_loader,
-        "n_features": 784
+        "n_features": 784,
     }
 
 # Step 2 - DeepNet
@@ -290,27 +285,24 @@ def compare_configs(loaders, configs, epochs=2, lr=0.1, seed=42):
 def dropout_effect(loaders, rate=0.5, epochs=3, seed=42):
     results = {}
 
-    for name, dropout_rate in {
-        "no_dropout": 0.0,
-        "dropout": rate
-    }.items():
+    for name, dropout_rate in (
+        ("no_dropout", 0.0),
+        ("dropout", rate),
+    ):
         torch.manual_seed(seed)
 
         model = DeepNet(
-            n_layers=3,
             activation="relu",
             batchnorm=True,
-            dropout=dropout_rate
+            dropout=dropout_rate,
+            n_layers=3
         )
 
         apply_he_init(model)
 
-        optimizer = torch.optim.SGD(
-            model.parameters(),
-            lr=0.1
-        )
+        optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
 
-        history = train_epochs(
+        train_epochs(
             model,
             loaders,
             optimizer,
@@ -319,21 +311,25 @@ def dropout_effect(loaders, rate=0.5, epochs=3, seed=42):
 
         model.eval()
 
-        correct = 0
-        total = 0
+        train_correct = 0
+        train_total = 0
+        val_correct = 0
+        val_total = 0
 
         with torch.no_grad():
             for xb, yb in loaders["train"]:
                 pred = model(xb).argmax(dim=1)
-                correct += (pred == yb).sum().item()
-                total += yb.size(0)
+                train_correct += (pred == yb).sum().item()
+                train_total += yb.size(0)
 
-        train_acc = correct / total
-        val_acc = history["val_acc"][-1]
+            for xb, yb in loaders["val"]:
+                pred = model(xb).argmax(dim=1)
+                val_correct += (pred == yb).sum().item()
+                val_total += yb.size(0)
 
         results[name] = {
-            "train_acc": float(train_acc),
-            "val_acc": float(val_acc)
+            "train_acc": float(train_correct / train_total),
+            "val_acc": float(val_correct / val_total)
         }
 
     return results
