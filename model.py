@@ -631,8 +631,111 @@ def trainable_parameters(model):
         if parameter.requires_grad
     )
 
-# Step 14 - transfer_experiment (not yet solved)
-# TODO: implement
+# Step 14 - transfer_experiment
+def transfer_experiment(tasks, epochs=2, seed=42):
+    # ── Pretrain on task A ──
+    torch.manual_seed(seed)
+
+    pretrained = DeepNet(
+        activation="relu",
+        batchnorm=True,
+        n_layers=3,
+        n_classes=tasks["A"]["n_classes"],
+    )
+
+    apply_he_init(pretrained)
+
+    optimizer_a = make_optimizer(
+        pretrained,
+        "momentum",
+        lr=0.05,
+    )
+
+    train_epochs(
+        pretrained,
+        tasks["A"],
+        optimizer_a,
+        epochs=epochs,
+    )
+
+    results = {}
+
+    # ── 1. Scratch model on task B ──
+    torch.manual_seed(seed)
+
+    scratch = DeepNet(
+        activation="relu",
+        batchnorm=True,
+        n_layers=3,
+        n_classes=tasks["B"]["n_classes"],
+    )
+
+    apply_he_init(scratch)
+
+    optimizer_scratch = make_optimizer(
+        scratch,
+        "momentum",
+        lr=0.05,
+    )
+
+    history_scratch = train_epochs(
+        scratch,
+        tasks["B"],
+        optimizer_scratch,
+        epochs=epochs,
+    )
+
+    results["scratch"] = float(
+        history_scratch["val_acc"][-1]
+    )
+
+    # ── 2. Frozen pretrained body on task B ──
+    frozen = transfer_head(
+        pretrained,
+        tasks["B"]["n_classes"],
+        freeze_body=True,
+    )
+
+    optimizer_frozen = torch.optim.SGD(
+        filter(
+            lambda parameter: parameter.requires_grad,
+            frozen.parameters(),
+        ),
+        lr=0.05,
+    )
+
+    history_frozen = train_epochs(
+        frozen,
+        tasks["B"],
+        optimizer_frozen,
+        epochs=epochs,
+    )
+
+    results["frozen"] = float(
+        history_frozen["val_acc"][-1]
+    )
+
+    # ── 3. Fine-tune the transferred model ──
+    for parameter in frozen.body.parameters():
+        parameter.requires_grad = True
+
+    optimizer_finetuned = torch.optim.SGD(
+        frozen.parameters(),
+        lr=0.005,
+    )
+
+    history_finetuned = train_epochs(
+        frozen,
+        tasks["B"],
+        optimizer_finetuned,
+        epochs=epochs,
+    )
+
+    results["finetuned"] = float(
+        history_finetuned["val_acc"][-1]
+    )
+
+    return results
 
 # Step 15 - save_deepnet (not yet solved)
 # TODO: implement
