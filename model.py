@@ -121,6 +121,8 @@ def fashion_loaders(n_train=5000, n_val=1000, batch_size=64, seed=42):
     }
 
 # Step 2 - DeepNet
+import torch.nn as nn
+
 class DeepNet(nn.Module):
     def __init__(
         self,
@@ -130,35 +132,30 @@ class DeepNet(nn.Module):
         activation="sigmoid",
         batchnorm=False,
         dropout=0.0,
-        n_classes=10
+        n_classes=10,
     ):
         super().__init__()
 
         if activation not in ("sigmoid", "relu"):
-            raise ValueError("activation must be either 'sigmoid' or 'relu'")
+            raise ValueError("activation must be 'sigmoid' or 'relu'")
 
         layers = []
-        in_features = n_features
 
-        for _ in range(n_layers):
-            # Linear
+        for i in range(n_layers):
+            in_features = n_features if i == 0 else n_hidden
+
             layers.append(nn.Linear(in_features, n_hidden))
 
-            # Optional BatchNorm1d
             if batchnorm:
                 layers.append(nn.BatchNorm1d(n_hidden))
 
-            # Activation
             if activation == "sigmoid":
                 layers.append(nn.Sigmoid())
             else:
                 layers.append(nn.ReLU())
 
-            # Optional Dropout
             if dropout > 0.0:
                 layers.append(nn.Dropout(dropout))
-
-            in_features = n_hidden
 
         self.body = nn.Sequential(*layers)
         self.head = nn.Linear(n_hidden, n_classes)
