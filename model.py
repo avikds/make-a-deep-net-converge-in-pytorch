@@ -737,6 +737,32 @@ def transfer_experiment(tasks, epochs=2, seed=42):
 
     return results
 
-# Step 15 - save_deepnet (not yet solved)
-# TODO: implement
+# Step 15 - save_deepnet
+def save_deepnet(model, config, path):
+    torch.save(
+        {
+            "state_dict": model.state_dict(),
+            "config": config,
+        },
+        path,
+    )
+
+
+def load_deepnet(path):
+    checkpoint = torch.load(
+        path,
+        map_location="cpu",
+    )
+
+    config = checkpoint["config"]
+
+    model = DeepNet(**config)
+
+    model.load_state_dict(
+        checkpoint["state_dict"]
+    )
+
+    model.eval()
+
+    return model
 
