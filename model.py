@@ -249,9 +249,11 @@ def gradient_norms(model, xb, yb):
 def apply_he_init(model):
     for layer in model.modules():
         if isinstance(layer, nn.Linear):
-            nn.init.kaiming_normal_(layer.weight, nonlinearity="relu")
-            if layer.bias is not None:
-                nn.init.zeros_(layer.bias)
+            nn.init.kaiming_normal_(
+                layer.weight,
+                nonlinearity="relu"
+            )
+            nn.init.zeros_(layer.bias)
 
     return model
 
